@@ -8,6 +8,8 @@ const c = @cImport({
 
 const stdx = @import("./stdx.zig");
 
+const SPLICE_F_NONBLOCK = 2;
+
 pub const IO = struct {
     ring: linux.IoUring,
 
@@ -51,7 +53,8 @@ pub const IO = struct {
         try sendFile(socket_index, file_index, &task_id, file_pipe, &ring, "./test.txt");
         try sendFile(socket_index, file_index, &task_id, file_pipe, &ring, "./test2.txt");
 
-        _ = try ring.close_direct(task_id, socket_index);
+        const shutdown = try ring.shutdown(task_id, socket_index, linux.SHUT.WR);
+        shutdown.flags |= linux.IOSQE_FIXED_FILE;
         task_id += 1;
 
         var remaining = try ring.submit_and_wait(@intCast(task_id));
@@ -82,12 +85,12 @@ pub const IO = struct {
 
         const splice_read = try ring.splice(task_id.*, file_index, 0, file_pipe[1], std.math.maxInt(u64), 13);
         splice_read.flags |= linux.IOSQE_IO_LINK;
-        splice_read.rw_flags |= linux.IORING_SPLICE_F_FD_IN_FIXED;
+        splice_read.rw_flags |= linux.IORING_SPLICE_F_FD_IN_FIXED | SPLICE_F_NONBLOCK;
         task_id.* += 1;
 
         const splice_write = try ring.splice(task_id.*, file_pipe[0], std.math.maxInt(u64), socket_index, std.math.maxInt(u64), 13);
         splice_write.flags |= linux.IOSQE_IO_LINK | linux.IOSQE_FIXED_FILE;
-        splice_read.rw_flags |= linux.IORING_SPLICE_F_FD_IN_FIXED;
+        splice_read.rw_flags |= linux.IORING_SPLICE_F_FD_IN_FIXED | SPLICE_F_NONBLOCK;
         task_id.* += 1;
     }
 };
