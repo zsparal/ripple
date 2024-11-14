@@ -6,7 +6,7 @@ const c = @cImport({
     @cInclude("arpa/inet.h");
 });
 
-const stdx = @import("./stdx.zig");
+const stdx = @import("stdx.zig");
 
 const SPLICE_F_NONBLOCK = 2;
 

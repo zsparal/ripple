@@ -8,7 +8,7 @@
             "type": "lldb",
             "request": "launch",
             "name": "Debug",
-            "program": "${workspaceFolder}/zig-out/bin/ripple",
+            "program": "${workspaceFolder}/zig-out/bin/list-test",
             "args": [],
             "cwd": "${workspaceFolder}"
         }
