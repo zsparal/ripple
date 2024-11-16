@@ -36,8 +36,6 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    exe.linkLibC();
-
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default
     // step when running `zig build`).
@@ -49,8 +47,6 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    exe_check.linkLibC();
 
     const test_check = b.addTest(.{
         .root_source_file = b.path("src/test.zig"),
