@@ -1,0 +1,23 @@
+io_uring based coroutines and notifications
+    - Model large tasks as separate stages
+    - When yielding, we save the current state in the completion and return.
+    - When the scheduler then looks for another task to handle (it's either new, or a yielded stage)
+        - if new, just start the task with an even
+        - if it yielded before, just resume the state machine
+
+
+actually, if all tasks are modelled as state machines, then this will just work. the state machine state and function are saves in a struct, that is passed
+in to the Executor. This executor passes in the current state, alongside of any parameters.
+
+We'll have a state machine _per connected client_ which will enable us to use multishot accept/recv setups. When configuring multishot recv, the "event" will
+link to the state machine's struct pointer, and call a `transition(state, ReceivedBytes { bytes })` function on the state machine that can decide what to do with
+it.
+
+We'll have several a few interlocking rings/state machines:
+    - 1 ring for hosting the TCP server. It listens to new connection requests using multishot accept and when it receives one, it round-robins it to the registered
+      per-core executors. It does not listen to actual data
+    - The per-core executors register recv requests for the connections and inter-ring communication. For the recv, they forward it to the producer/consumer handler
+      state machine.
+    - After a request is parsed by the state machine, it takes a look at which ring is responsible for the given partition and forwards the request via ring messages.
+        - If it's a write request, how should we handle the parsed buffer? I think the thread that parsed the message should keep the buffer allocated until notified.
+    - Owner thread receives ring message and handles it. Then it sends a message back to the sender, indicating that it can release the buffer.
