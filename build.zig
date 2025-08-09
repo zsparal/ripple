@@ -23,10 +23,8 @@ pub fn build(b: *std.Build) void {
 
     const libs = .{
         .ripple = addCheckedStaticLibrary(b, "ripple", .{
-            .root = b.path("lib/ripple.zig"),
+            .root = &modules.ripple,
             .imports = &.{},
-            .target = target,
-            .mode = optimize,
         }),
     };
 
@@ -77,17 +75,14 @@ fn addNamedModule(b: *std.Build, comptime name: []const u8, options: struct {
 }
 
 fn addCheckedStaticLibrary(b: *std.Build, comptime name: []const u8, options: struct {
-    root: std.Build.LazyPath,
+    root: *const NamedModule,
     imports: []const NamedModule,
-    target: std.Build.ResolvedTarget,
-    mode: std.builtin.OptimizeMode,
 }) CheckedArtifact {
     const libs = CheckedArtifact{
-        .artifact = b.addStaticLibrary(.{
+        .artifact = b.addLibrary(.{
+            .linkage = .static,
             .name = name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = options.root.module,
         }),
         // Duplicate the step for check and step. This way we can set up the run artifact for
         // the real test only, making sure the "check" step can run with `-fno-emit-bin`. This
@@ -96,15 +91,11 @@ fn addCheckedStaticLibrary(b: *std.Build, comptime name: []const u8, options: st
         //       for a simplified setup
         .check = b.addTest(.{
             .name = name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = options.root.module,
         }),
         .@"test" = b.addTest(.{
             .name = name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = options.root.module,
         }),
     };
 
@@ -126,24 +117,24 @@ fn addCheckedExecutable(b: *std.Build, comptime name: []const u8, options: struc
     mode: std.builtin.OptimizeMode,
 }) CheckedArtifact {
     const exe_name = "ripple-" ++ name;
+    const root_module = b.createModule(.{
+        .root_source_file = options.root,
+        .target = options.target,
+        .optimize = options.mode,
+    });
+
     const executables = CheckedArtifact{
         .artifact = b.addExecutable(.{
             .name = exe_name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = root_module,
         }),
         .check = b.addTest(.{
             .name = exe_name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = root_module,
         }),
         .@"test" = b.addTest(.{
             .name = exe_name,
-            .root_source_file = options.root,
-            .target = options.target,
-            .optimize = options.mode,
+            .root_module = root_module,
         }),
     };
 
