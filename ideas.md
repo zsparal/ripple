@@ -22,3 +22,15 @@ We'll have several a few interlocking rings/state machines:
   - After a request is parsed by the state machine, it takes a look at which ring is responsible for the given partition and forwards the request via ring messages.
       - If it's a write request, how should we handle the parsed buffer? I think the thread that parsed the message should keep the buffer allocated until notified.
   - Owner thread receives ring message and handles it. Then it sends a message back to the sender, indicating that it can release the buffer.
+
+- Use direct, non-buffered IO
+- Use IORING_OP_PROVIDE_BUFFERS
+
+Backpressure
+  Server issues “CREDIT n” frames (messages allowed or bytes allowed).
+  Client must not exceed; violation ⇒ drop connection.
+  When backpressure hits, stop granting credits; only heartbeat frames (flagged) are allowed (these consume no credit).
+  This avoids kernel buffering of excess requests.
+
+
+https://dassl-uiuc.github.io/pdfs/papers/lazylog.pdf

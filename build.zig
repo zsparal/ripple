@@ -127,6 +127,7 @@ fn addCheckedExecutable(b: *std.Build, comptime name: []const u8, options: struc
         .artifact = b.addExecutable(.{
             .name = exe_name,
             .root_module = root_module,
+            .use_llvm = true,
         }),
         .check = b.addTest(.{
             .name = exe_name,

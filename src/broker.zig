@@ -4,8 +4,9 @@ const ripple = @import("ripple");
 
 pub fn main() !void {
     var stdout_buffer: [1024]u8 = undefined;
+    const a = 5;
 
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    std.debug.print("All your {d} {s} are belong to us.\n", .{ a, "codebase" });
 
     var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
     const stdout = &stdout_writer.interface;
